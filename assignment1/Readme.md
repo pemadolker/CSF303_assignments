@@ -1,25 +1,28 @@
-<!-- # Assignment 1 — DSA (STL, Bellman-Ford, Floyd-Warshall)
+### Assignment 1 - DSA (STL, Bellman-Ford, Floyd-Warshall)
+### Module code - CSF 303
+### Student no : 02230294
 
----
 
-## Overview
+### Overview
 
-This assignment covers three main topics: STL containers in C++, the Bellman-Ford shortest path algorithm, and the Floyd-Warshall all-pairs shortest path algorithm. Each question is in its own `.cpp` file. All programs take user input at runtime.
+This assignment covers three key areas: STL containers in C++, the Bellman-Ford shortest path algorithm, and the Floyd-Warshall all-pairs shortest path algorithm. All the questions are in individual files (.cpp). Each program accepts input of its users at run times.
 
 Files:
-- `q1_stl.cpp` — STL containers (vector, deque, array)
-- `q2_bellman_ford.cpp` — Bellman-Ford + negative cycle detection
-- `q3_floyd_warshall.cpp` — Floyd-Warshall + negative cycle detection
-
-Compile with: `g++ -std=c++17 -o <output> <file>.cpp`
+- `Question1.cpp`- STL containers (vector, deque, array)
+- `Question2.cpp` - Bellman-Ford + negative cycle detection
+- `Question3.cpp` - Floyd-Warshall + negative cycle detection
 
 ---
 
-## Question 1 — STL Containers
+### Question 1 - STL Containers
+Write a C++ program that demonstrates the use of Standard Template Library (STL) containers:
 
-### Part A — vector, reverse output
 
-I used a `std::vector<int>` to store N integers entered by the user, then printed them in reverse. Instead of doing it manually with a loop counting down from N-1, I used reverse iterators (`rbegin()` and `rend()`) which is the proper STL way to do it. The size N is read at runtime so it works for any input up to 10^5.
+#### Part A - vector, reverse output
+
+I declared a vector  of N integers that were inputted by the user which I stored in a `std::vector<int>` and then printed in reverse. The right way to do it in the STL would be to use reverse iterators (`rbegin()` and `rend()`), so that instead of counting down manually using a loop of N-1, I did it with reverse iterators. The size N is read dynamically such that it can handle any input of size up to 10^5.
+
+
 
 ```cpp
 for (auto it = nums.rbegin(); it != nums.rend(); ++it) {
@@ -28,36 +31,24 @@ for (auto it = nums.rbegin(); it != nums.rend(); ++it) {
 ```
 
 Sample:
-```
-Enter N: 5
-Enter 5 integers: 3 1 4 1 5
-Reversed: 5 1 4 1 3
-```
 
----
+![alt text](image-1.png)
 
-### Part B — deque, operation sequence
 
-For the deque part I made it interactive — the user types operations one at a time (PUSH_FRONT, PUSH_BACK, POP_FRONT) and types DONE when finished. Each operation prints what it did so you can follow along. I also added a check so POP_FRONT on an empty deque does not crash.
 
-The reason deque makes sense here is that push_front is O(1) on a deque but O(N) on a vector, so for double-ended operations deque is the right choice.
+#### Part B - deque, operation sequence
 
-```
-PUSH_BACK 10     ->  push_back(10) done
-PUSH_FRONT 5     ->  push_front(5) done
-POP_FRONT        ->  pop_front() removed: 5
-PUSH_BACK 30     ->  push_back(30) done
-DONE
+In the deque section I made it interactive -- the user enters operations one at a time (PUSH_FRONT, PUSH_BACK, POP_FRONT), and once done types DONE. Every operation records its actions so that you can track along. I also included a check so having an empty deque results in a crash of POP_FRONT.
 
-Final deque contents: 10 30
-Size: 2
-```
+The reason deque makes sense is because push_front is O(1) on a deque, but O(N) on a vector, and thus with double-ended operations deque is the correct choice.
 
----
+![alt text](image-2.png)
 
-### Part C — std::array, sum with STL
 
-`std::array` is different from vector because its size has to be known at compile time — you cannot resize it. I set the size to 5 as a compile-time constant and read the values from the user. The sum is computed using `std::accumulate` from `<numeric>` rather than a manual loop, and I also used `std::minmax_element` to get the min and max in one pass.
+
+#### Part C — std::array, sum with STL
+
+`std::array` is different from vector because ize of the array must be known at at least compile time, you cannot resize it. I set the size to 5 as a compile-time constant and read the values from the user. The sum is computed using `std::accumulate` from `<numeric>` rather than a manual loop, and I also used `std::minmax_element` to obtain the min and the max in a single pass.
 
 ```cpp
 const int SIZE = 5;
@@ -66,20 +57,17 @@ int total = std::accumulate(arr.begin(), arr.end(), 0);
 ```
 
 Sample:
-```
-Enter 5 integers: 4 7 2 9 1
-Array elements: 4 7 2 9 1
-Sum (via std::accumulate): 23
-Min: 1, Max: 9
-```
+
+![alt text](image-3.png)
 
 ---
 
-## Question 2 — Bellman-Ford
+### Question 2 - Bellman-Ford
 
-### How the algorithm works
+#### How the algorithm works
 
-Bellman-Ford finds shortest paths from a single source vertex to all others. The idea is edge relaxation — you go through every edge and check if you can improve the known distance to the destination vertex. You repeat this V-1 times because the longest possible shortest path (with no negative cycles) visits at most V-1 edges.
+Bellman-Ford determines the shortest routes between a single source node to all others. The concept is edge relaxation - you consider all the edges and decide whether you can come up with a better known distance to the destination vertex. You do this V-1 times since the longest possible shortest path (with no negative cycles) visits at most V-1 edges.
+
 
 ```
 for V-1 iterations:
@@ -89,62 +77,33 @@ for V-1 iterations:
             parent[v] = u
 ```
 
-I also added an early exit — if a full pass over all edges makes no update, the algorithm has already converged and there is no point doing more iterations.
+I also added an early exit - if a full pass over all edges makes no update, the algorithm has already converged and there is no point doing more iterations.
 
-### Path reconstruction
+#### Path reconstruction
 
-I kept a parent[] array that records how we arrived at each vertex during relaxation. Once the algorithm finishes, tracing back through the parent chain from any target vertex gives the full path. I used a stack to reverse it so it prints in the right order (source to destination).
+I had an array parent[] which is a record of the way we had reached the each vertex in relaxation. After the algorithm completes, one can trace back through the parent chain to any target vertex to find the entire path. To print it in the correct sequence (source to destination) I reversed it using a stack.
 
-### Negative cycle detection
 
-After V-1 passes, I do one more relaxation pass. If any distance still gets updated in this extra pass, it means there is a negative cycle — the algorithm should have fully converged by now if there was not one.
+#### Negative cycle detection
 
-I also ran a BFS after finding the directly affected vertices to propagate the -INF flag forward. A vertex being on a negative cycle makes every vertex reachable from it also have distance -INF, not just the ones directly on the cycle itself.
+When V-1 passes, I make an additional relaxation pass. When any distance is again updated during this additional pass, then it indicates the existence of a negative cycle - the algorithm should now have completely converged to the extent that there is not one.
 
-### Input / Output
+I also did a BFS on the directly affected vertices after discovering them to extend the -INF flag. The fact that a vertex is on a negative cycle implies that all the vertices that can be reached by it also have distance -INF, not just the vertices that are on the cycle itself.
 
-Input format:
-```
-5 8        <- V and E
-0 1 -1     <- edges (u v w), one per line
-0 2 4
-1 2 3
-1 3 2
-1 4 2
-3 2 5
-3 1 1
-4 3 -3
-0          <- source vertex
-```
+#### Input / Output
 
-Output:
-```
-Shortest distances from source vertex 0:
-  Vertex 1: -1
-  Vertex 2: 2
-  Vertex 3: -2
-  Vertex 4: 1
-
-Shortest paths from source vertex 0:
-  To vertex 1: 0 -> 1  (distance: -1)
-  To vertex 2: 0 -> 1 -> 2  (distance: 2)
-  To vertex 3: 0 -> 1 -> 4 -> 3  (distance: -2)
-  To vertex 4: 0 -> 1 -> 4  (distance: 1)
-
-No negative weight cycles detected.
-```
-
-Vertices that cannot be reached show UNREACHABLE, and vertices caught in or downstream of a negative cycle show -INF.
+![alt text](<image copy.png>)
 
 Complexity: O(V x E) time, O(V) space
 
 ---
 
-## Question 3 — Floyd-Warshall
+### Question 3 — Floyd-Warshall
 
-### How the algorithm works
+#### How the algorithm works
 
-While Bellman-Ford works from one source, Floyd-Warshall computes shortest paths between every pair of vertices at once. It does this with three nested loops and a DP recurrence:
+On the one hand, Bellman-Ford works from a single source, and on the other hand, Floyd-Warshall calculates the shortest paths between each pair of vertices at once. It does this with three nested loops and a DP recurrence:
+
 
 ```
 for each intermediate vertex k:
@@ -152,46 +111,39 @@ for each intermediate vertex k:
         dist[i][j] = min(dist[i][j], dist[i][k] + dist[k][j])
 ```
 
-The idea is that for each k, you are asking: is the path from i to j shorter if we are allowed to go through k? After all V values of k have been tried, every pair has its optimal answer.
+The idea is that for each k, you are asking:  does the path between i and j become shorter if we are allowed to go through k? Each pair has its best answer, after all V values of k have been tried.
+
 
 The matrix is initialised with direct edge weights (INF where no edge exists, 0 on the diagonal).
 
 Complexity: O(V^3) time, O(V^2) space
 
-### Negative cycle detection
+#### Negative cycle detection
 
 After running the algorithm, I check if dist[i][i] < 0 for any vertex. If a vertex has a negative path back to itself, it is on a negative cycle.
 
-I then mark all pairs (i, j) as -INF if there is any negative-cycle vertex k that lies on the path from i to j — meaning i can reach k and k can reach j. Without this the matrix would just show garbage numbers for those pairs.
+I then indicate all pairs (i, j) with -INF in case there is a negative-cycle vertex k that is on the path between i and j - i can reach k, and k can reach j. Without this the matrix would just show gibberish numbers for those pairs.
 
-### Distance matrix output
+
+#### Distance matrix output
 
 No negative cycle:
-```
-              0        1        2        3
-------------------------------------------
-   0 |        0        3        5        0
-   1 |        8        0        2       -3
-   2 |      INF      INF        0       -5
-   3 |      INF      INF      INF        0
-```
+
+![alt text](<image copy 2.png>)
 
 With a negative cycle:
-```
-              0        1        2
----------------------------------
-   0 |     -INF     -INF     -INF
-   1 |     -INF     -INF     -INF
-   2 |     -INF     -INF     -INF
-```
 
-### Part D — Written answers
+![alt text](<image copy 3.png>)
+
+#### Part D - Provide a brief explanation
 
 **Why Floyd-Warshall works with negative edge weights:**
-The algorithm does not care whether individual weights are positive or negative. All it does at each step is compare two path lengths and keep the smaller one. As long as the shortest paths are finite and well-defined (no negative cycles), the DP converges to the correct answer regardless of the sign of the weights.
+
+There is no difference between positive and negative weights in the algorithm. Each of its steps just compares two path lengths and retains the shorter. Provided the shortest paths are finite and well-defined (they have no negative cycles) the DP will reach the right answer, whether the weights are negative or positive.
 
 **Why it fails with negative cycles:**
-If there is a negative cycle somewhere, the shortest path between vertices that can reach it becomes -infinity — you just keep going around the loop and the total cost keeps going down. Floyd-Warshall has no mechanism for this; it runs its fixed iterations and leaves wrong values in the matrix. The sign of dist[i][i] going negative is how you detect it happened.
 
---- -->
+When there is a negative cycle somewhere, then the minimum cost path between vertices that can reach it is -infinity, you just continue round the loop and the cost decreases by the cost of the loop. There is no such mechanism in Floyd-Warshall for this; it performs its fixed rounds and leaves incorrect values in the matrix. The indication that dist[i][i] became negative is the way you know that it happened.
+
+
 
