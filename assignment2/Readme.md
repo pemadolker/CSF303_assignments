@@ -10,9 +10,9 @@ This assignment covers six topics: bitmasking for subset enumeration, Johnson's 
  
 ---
  
-### Question 1 — Bitmasking
+### Question 1 - Bitmasking
  
-#### Part A — Generating all subsets
+#### Part A - Generating all subsets
  
 Given a set of N integers (N up to 20), any subset of N integers is represented by a bitmask of N bits. When the i th bit in the mask is set, element i is in the subset. Because N masks are possible, the combination of 0 through 2N-1 corresponds to all the subsets (a single time each).
 
@@ -36,7 +36,7 @@ for (int mask = 0; mask < (1 << n); mask++) {
  
 The total number of subsets generated is 2^N. In the case of N = 20 this is 1, 048, 576 - a large number but can be handled within a sensible amount of time.
  
-#### Part B — Counting subsets with sum divisible by K
+#### Part B - Counting subsets with sum divisible by K
  
 For each bitmask, the sum of the elements included is calculated and tested whether it is divisible by K with modulo operator.
 
@@ -66,7 +66,7 @@ std::cout << "Count: " << count << std::endl;
 
 ### Question 2: Johnson's Algorithm
 
-####  Part A — Why Johnson's Algorithm is more efficient than Floyd-Warshall for sparse graphs
+####  Part A - Why Johnson's Algorithm is more efficient than Floyd-Warshall for sparse graphs
 
 The running time of **Floyd-Warshall** does not depend on the number of edges, and is **O(V³)**. It uses dynamic programming on all pairs of vertices so even in a highly sparse graph it does the same thing - it is not at all sensitive to the density of the graph.
 
@@ -84,7 +84,7 @@ For a **sparse graph**, E ≪ V², so:
 
 ---
 
-## Part B — Edge reweighting and Bellman-Ford.
+## Part B - Edge reweighting and Bellman-Ford.
 
 **The Problem with Dijkstra on Negative Weights:**
 Dijkstra's algorithm does not work when the weights of the edges are negative since its greedy assumption, that the shortest path is determined when a node has been settled, fails when a subsequent negative edge can create a shorter path. To make Johnson algorithm work, negative edges should be removed without altering shortest paths, that is, Dijkstra should be used.
@@ -212,7 +212,7 @@ This is a directed version of the minimum spanning tree problem. In contrast to 
 
 # Question 5: String Matching Algorithms
 
-## Part A: KMP: LPS Array of "ABABCABAB"
+## Part A - KMP: LPS Array of "ABABCABAB"
 
 ### What is the LPS Array?
 
