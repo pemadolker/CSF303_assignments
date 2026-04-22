@@ -1,12 +1,77 @@
+### Assignment 2 - DSA (Bitmasking, Johnson's Algorithm, Arbitrage Detection, Edmonds' Algorithm, KMP, Rabin-Karp)
+### Module code - CSF 303
+### Student no : 02230294
+ 
+---
+ 
+### Overview
+ 
+This assignment covers six topics: bitmasking for subset enumeration, Johnson's Algorithm for all-pairs shortest paths on sparse graphs, arbitrage detection using graph-based currency modelling, Edmonds' Algorithm for minimum spanning arborescences, and two string matching algorithms using KMP and Rabin-Karp.
+ 
+---
+ 
+### Question 1 — Bitmasking
+ 
+#### Part A — Generating all subsets
+ 
+Given a set of N integers (N up to 20), any subset of N integers is represented by a bitmask of N bits. When the i th bit in the mask is set, element i is in the subset. Because N masks are possible, the combination of 0 through 2N-1 corresponds to all the subsets (a single time each).
 
-# Question 2: Johnson's Algorithm
+ 
+```cpp
+int n;
+std::cin >> n;
+std::vector<int> arr(n);
+for (int i = 0; i < n; i++) std::cin >> arr[i];
+ 
+for (int mask = 0; mask < (1 << n); mask++) {
+    std::vector<int> subset;
+    for (int i = 0; i < n; i++) {
+        if (mask & (1 << i)) {
+            subset.push_back(arr[i]);
+        }
+    }
+    // process subset
+}
+```
+ 
+The total number of subsets generated is 2^N. In the case of N = 20 this is 1, 048, 576 - a large number but can be handled within a sensible amount of time.
+ 
+#### Part B — Counting subsets with sum divisible by K
+ 
+For each bitmask, the sum of the elements included is calculated and tested whether it is divisible by K with modulo operator.
 
-## (a): Explain why Johnson's Algorithm is More Efficient than Floyd-Warshall for Sparse Graphs
+ 
+```cpp
+int k, count = 0;
+std::cin >> k;
+ 
+for (int mask = 0; mask < (1 << n); mask++) {
+    int sum = 0;
+    for (int i = 0; i < n; i++) {
+        if (mask & (1 << i)) {
+            sum += arr[i];
+        }
+    }
+    if (sum % k == 0) count++;
+}
+std::cout << "Count: " << count << std::endl;
+```
+ 
+**Complexity:** O(2^N × N) time, O(N) space (for the current subset). Since N ≤ 20, the worst case is about 20 million operations, which runs comfortably within time limits.
+ 
+
+![alt text](image.png)
+
+---
+
+### Question 2: Johnson's Algorithm
+
+####  Part A — Why Johnson's Algorithm is more efficient than Floyd-Warshall for sparse graphs
+
+The running time of **Floyd-Warshall** does not depend on the number of edges, and is **O(V³)**. It uses dynamic programming on all pairs of vertices so even in a highly sparse graph it does the same thing - it is not at all sensitive to the density of the graph.
 
 
-The runtime of **Floyd-Warshall**  is insensitive to the number of edges, and is **O(V³)**. It applies dynamic programming to all pairs of vertices which implies that even when the graph is very sparse, it does the same work - it is totally independent of the density of the graph.
-
-**Johnson's Algorithm** runs in **O(V² log V + VE)**. It is efficient because it only needs to run the algorithm of Dijkstra once per vertex (V times), and once with a binary heap (Dijkstra) runs in **O((V + E) log V )** each time, so runs in **O(V(V + E) log V)** , which then simplifies to  **O(V² log V + VE)**.
+**Johnson's Algorithm** runs in **O(V² log V + VE)**. It is efficient because it merely requires running the algorithm of Dijkstra once per vertex (V times), and once with a binary heap (Dijkstra) runs in log V(V + E) per run, and thus runs in O(V V log V + VE), which simplifies to O(V log V + VE).
 
 For a **sparse graph**, E ≪ V², so:
 
@@ -15,92 +80,65 @@ For a **sparse graph**, E ≪ V², so:
 | Floyd-Warshall | O(V³) | O(V³) |
 | Johnson's | O(V² log V + VE) | O(V² log V) |
 
-Johnson is much faster so on sparse graphs. For example, with V = 1000 and E = 2000:
-- Floyd-Warshall: ~1,000,000,000 operations
-- Johnson's: ~1,000,000 × 11 ≈ 11,000,000 operations
-
 **The key insight:** Floyd-Warshall's cubic complexity is fixed. Johnson takes advantage of sparseness of the graph - the fewer the number of edges, the quicker Dijkstra is.
 
 ---
 
-## (b): Describe the purpose of edge reweighting and how Bellman-Ford is used in this context.
+## Part B — Edge reweighting and Bellman-Ford.
 
 **The Problem with Dijkstra on Negative Weights:**
 Dijkstra's algorithm does not work when the weights of the edges are negative since its greedy assumption, that the shortest path is determined when a node has been settled, fails when a subsequent negative edge can create a shorter path. To make Johnson algorithm work, negative edges should be removed without altering shortest paths, that is, Dijkstra should be used.
 
 **Edge Reweighting — Solution:**
-In the algorithm of Johnson, the reweighting function is proposed by making use of a potential value of each vertex in the graph, which is denoted by `h(v)`  and changing each edge weight as:
 
-```
-ŵ(u, v) = w(u, v) + h(u) - h(v)
-```
+The Algorithm of Johnson can deal with negative edge weights by redefining all the edges as non-negative, without altering the shortest path.
+
+The process is:
+
+1. Add a zero-weight vertex s to each other vertex.
+2. Bellman-Ford(s) to calculate a potential function h[v] - the shortest path between s and every vertex v.
+3. Reweight each edge ŵ(u, v) = w(u, v) + h[u] - h[v]
 
 This transformation has two critical properties:
 1. **All reweighted edges become non-negative** — safe for Dijkstra
 2. **Shortest paths are preserved** —in case a path P is shortest with original weights, it is also shortest with reweighted values, since on any route between s and t, the h() terms telescope and cancel out:
 
-```
-ŵ(path) = w(path) + h(s) - h(t)
-```
+Once shortest paths have been computed in the reweighted graph, the original distances can be obtained by inverting the transformation.
 
-The offset `h(s) - h(t)` is the same for ALL paths from s to t, so the relative ordering of paths is unchanged.
+This initial stage makes use of Bellman-Ford due to its ability to correctly deal with negative edge weights, something that Dijkstra cannot. It is also a negative-cycle detector - in the event that Bellman-Ford reports a negative cycle, then Johnson halts its Algorithm because shortest paths are not well-defined and It only runs **once** — O(VE) — which is acceptable as a preprocessing step
 
-**Role of Bellman-Ford:**
-To compute the potential values `h(v)`, Johnson's algorithm:
-1. Introduces a new source vertex q which has an edge to each other vertex of weight 0.
-2. Find the shortest path of distance `h(v)` of q to each vertex v by running BellmanFord with input q.
-3. These distances are taken to be the potentials that are to be reweighted.
-
-Bellman-Ford is chosen here specifically because:
-- It **handles negative edge weights**, and this is precisely what we are attempting to avoid.
-- It **detects negative cycles** — a negative cycle is detected by Bellman-Ford, and this algorithm is correct in halting and reporting no solution (negative cycles make shortest paths undefined)
-- It only runs **once** — O(VE) — which is acceptable as a preprocessing step
-
-**Summary of Johnson's Full Pipeline:**
-```
-1. Add a dummy vertex q, which has 0-weight edges to all vertices.
-2. Bellman-Ford(q) to get potentials h(v) [O(VE)].
-3. Reweight all edges using ŵ(u,v) = w(u,v) + h(u) - h(v)
-4. Run Dijkstra on all vertices of reweighted graph [O(V(V+E)logV)]
-5. Adjust results back: d(u,v) = d̂(u,v) - h(u) + h(v)
-```
 
 
 # Question 3: Arbitrage Detection in Currency Exchange
 
-## (a): Model the currency exchange problem as a weighted directed graph.
+## Part A : Modeling the currency exchange problem as a weighted directed graph.
 
 The currency exchange in terms of currency is modelled as:
 
-- **Vertices (V):** Vertices are currencies (e.g., USD, EUR, GBP, JPY).
-- **Directed Edges (E):** An edge between vertex u and vertex v is a directed edge, indicating the possibility of exchanging currency u with currency v.
-- **Edge Weight:** weight of edge (u → v) is the exchange rate r(u,v) one unit of currency u exchanges r(u,v) units of currency v.
+- **Vertices (V):**  currencies
+- **Directed Edges (E):** An edge between vertex u and vertex v is a directed edge
+- **Edge Weight:** weight of edge (u → v) is the exchange rate r(u,v) .
 
-**Example:**
-```
-USD → EUR : rate = 0.91
-EUR → GBP : rate = 0.86
-GBP → USD : rate = 1.27
-```
 
-An **arbitrage opportunity** exists when starting with 1 unit of some currency, you can traverse a cycle through other currencies and return with **more than 1 unit** — i.e., when:
+The currencies are depicted in the form of a vertex. Given any exchange rate between currency A and currency B, where the rate is r, an directed edge is added between vertex A and vertex B whose weight is the rate r. The graph is completely directed as the exchange rates are not always symmetric (the rate of USD to EUR can be different to EUR to USD).
+
+This means that there is an **arbitrage opportunity** in case there is a cycle in this graph such that the product of the exchange rates through the cycle is more than 1 - that is, that you may start with a certain amount of currency, follow the cycle, and come out with more than you initially had.
+
 
 ```
 r(u→v) × r(v→w) × r(w→u) > 1
 ```
 
-The problem then becomes: **detect a positive-product cycle** in this directed weighted graph.
 
+### Part B: Logarithmic transformation.
 
-## (b) How logarithmic transformation of exchange rates converts the problem into a shortest path or cycle detection problem.
-
-Identifying a positive-product cycle is mathematically clumsy and requires special graph algorithms to detect it, such as the sums and products of the graph instead of the products. The gap is bridged by the use of logarithmic transformation which transforms multiplication into addition.
+It is not a typical shortest-path problem to directly find cycles in which the product of weights is greater than 1. The change to convert it into one is to take the negative logarithm of every exchange rate:
 
 **The Transformation:**
 Replace each edge weight r(u, v) with:
 
 ```
-w(u, v) = -log(r(u, v))
+edge weight = -log(exchange_rate)
 ```
 
 **Why this works:**
@@ -120,16 +158,11 @@ Negating (to convert to our edge weights):
 -log(r₁) + (-log(r₂)) + ... + (-log(rₖ)) < 0
 ```
 
-Thus a positive-product cycle in the original graph is turned into a negative-weight cycle in the transformed graph. It is an extensively studied issue that can be identified directly using the usual shortest-path algorithms.
+In this transformation, multiplication of rates along a path is added logarithms, and a product more than 1 is added to a sum less than 0. This means that an arbitrage opportunity is precisely a negative-weight cycle in the transformed graph. This transforms the problem to a conventional negative cycle detection problem.
 
-**The transformation converts:**
-```
-Arbitrage detection  →  Negative cycle detection
-Positive product cycle  →  Negative weight cycle
-Multiplication  →  Addition ( through logarithm)
-```
 
-## (c):Identify the algorithm used to detect arbitrage opportunities and justify its use.
+
+### Part C - Algorithm used and justification
 
 **Algorithm: Bellman-Ford**
 
@@ -137,26 +170,22 @@ With the logarithmic transformation, the issue is now to identify a negative-wei
 
 **How Bellman-Ford detects negative cycles:**
 
-Bellman-Ford relaxes all edges **(V - 1)** times. In case any edge (u, v) remains relaxable, after these relaxations, that is, can satisfy:
+Once the logarithmic transformation has been implemented, the algorithm is implemented on the transformed graph. When a relaxation still exists after V-1 iterations,it satisfy:
 
 ```
 dist[v] > dist[u] + w(u, v)
 ```
 
-— there is a negative cycle in the graph, which is associated with an arbitrage opportunity.
+- then a negative cycle exists in the transformed graph, and relates to an arbitrage opportunity in the original currency exchange graph.
 
-**Reason for choosing Bellman-Ford:**
-
-| Property | Why it matters here |
-|---|---|
-| Handles negative edge weights | Our log-transformed weights can be negative |
-| Detects negative cycles explicitly | This is exactly what arbitrage maps to |
-| Works on directed graphs |  Exchange of currencies is directed. |
-| O(VE) complexity | Acceptable for typical currency graph sizes |
+Bellman-Ford is the right one in this case since:
+- It supports negative edge weights, which come about due to the log transformation of rates below 1.
+- It explicitly finds negative cycles, which is precisely what must be found.
+- Dijkstra cannot be used since it does not support negative weights.
 
 **Dijkstra cannot be used here** since it does not support negative edge weights, and does not have any way to identify negative cycles.
 
-**Complete Arbitrage Detection Pipeline:**
+<!-- **Complete Arbitrage Detection Pipeline:**
 ```
 1. Build graph: vertices = currencies, edges = exchange rates
 2. Transform weights: w(u,v) = -log(rate(u,v))
@@ -164,53 +193,30 @@ dist[v] > dist[u] + w(u, v)
 4. On the Vth iteration, check if any edge can still be relaxed
 5. If yes → negative cycle exists → ARBITRAGE OPPORTUNITY FOUND
 ```
+ -->
 
 
 # Question 4: Edmonds' Algorithm
 
-## Q. State the problem solved by Edmonds’ Algorithm in precise terms.
+##  Problem solved by Edmonds’ Algorithm .
 
-**Edmonds' Algorithm** (also known as **Chu-Liu/Edmonds' Algorithm**) solves the **Minimum Spanning Arborescence (MSA)** problem, defined precisely as follows:
+The Algorithm of Chu-Liu/Edmonds (named also as Algorithm of Edmonds) is an algorithm to solve the Minimum Spanning Arborescence problem:
 
-Given a directed graph G = (V, E, w) and a specified root node r V, find a minimum weight spanning arborescence rooted at r - a directed subgraph T of G such that:
-> 1. T has precisely V -1 edges.
-> 2. At each vertex v other than r, the directed path rvi is defined by a unique directed path in T (i.e. there exists a directed path rvi) (i.e. r can reach all other vertices).
-> 3. The overall weight of the edges of T is minimized.
+Given a directed graph with weights and a given root vertex r, we seek a spanning arborescence with root r - a directed spanning tree in which all nodes except root r have exactly one incoming edge, and in which all nodes are reachable by the root r - with total weight minimised.
 
-
-**Key distinctions from related problems:**
-
-| Problem | Graph Type | Goal |
-|---|---|---|
-| Minimum Spanning Tree (Prim's/Kruskal's) | **Undirected** | Minimum weight spanning tree |
-| Minimum Spanning Arborescence | **Directed** | Minimum weight directed spanning tree rooted at r |
-
-This is inherently more difficult due to its directed nature - you can not use Prim's or Kruskal's since edge direction does not imply reachability is symmetric.
-
-**What makes it non-trivial:**
-In an undirected MST, any edge is allowed to be traversed in both directions. In a directed graph, the optimum incoming graph-edge of every vertex is chosen with care - greedily selecting the minimum incoming graph-edge per vertex usually results in a cycle, and this problem is solved by Edmonds algorithm through a **cycle contraction and re-expansion procedure**.
-
-**Algorithm Overview:**
-```
-1. For each vertex v ≠ r, select the minimum weight incoming edge
-2. If no cycle forms → this is the MSA
-3. If a cycle C forms → contract C into a single supernode,
-   assign edge weights to account for the cycle,
-   recurse on the contracted graph,
-   then expand the cycle back, removing exactly one edge to break it
-```
-**Time Complexity: O(VE)**, with the original formulation, can be improved to O(E log V) when using priority queues (refinement by Tarjan).
+This is a directed version of the minimum spanning tree problem. In contrast to undirected MST (solved by Kruskal algorithm or Prim algorithm), the directed version cannot rely on either of the algorithms since edge directionality implies that the minimum incoming edge at a vertex can be in a cycle that must be contracted and solved in an iterative fashion. Edmonds' Algorithm handles this by greedily selecting the minimum-weight incoming edge for each non-root vertex, detecting and contracting cycles, then recursively solving the reduced graph. It has a time complexity of O(E V), or O(E V log V) with a Fibonacci heap.
 
 **Practical applications:** Network broadcast trees, dependency resolution, optimizing directed communication networks, and finding optimal root-to-all routing in directed graphs.
 
 
+
 # Question 5: String Matching Algorithms
 
-## (a): For the Knuth-Morris-Pratt (KMP) algorithm, compute the Longest Prefix Suffix (LPS) array for the pattern:  "ABABCABAB"
+## Part A: KMP: LPS Array of "ABABCABAB"
 
 ### What is the LPS Array?
 
-The LPS (Longest Proper Prefix which is also a Suffix) array stores, for each position `i` in the pattern, the **length of the longest proper prefix of the substring `pattern[0..i]` that is also a suffix** of that substring. "Proper" means the prefix/suffix cannot be the entire string itself.
+The Longest Prefix Suffix (LPS) array is an array of the length of the longest proper prefix of the substring pattern[0i] which is also a suffix of the substring pattern[0i]. "Proper" means the prefix/suffix cannot be the entire string itself.
 
 This allows KMP to **skip redundant comparisons** on mismatch — instead of restarting from the beginning of the pattern, it jumps to the position indicated by LPS.
 
@@ -288,78 +294,41 @@ LPS:      0  0  1  2  0  1  2  3  4
 
 ### Verification of Key Entries
 
-| Index | Substring | Longest Prefix = Suffix | LPS Value |
-|---|---|---|---|
-| 0 | `A` | none (single char) | 0 |
-| 2 | `ABA` | `A` | 1 |
-| 3 | `ABAB` | `AB` | 2 |
-| 4 | `ABABC` | none | 0 |
-| 7 | `ABABCABA` | `ABA` | 3 |
-| 8 | `ABABCABAB` | `ABAB` | **4** |
+Char Index LPS value Reasoning
+|-------|------|-----------|-----------|
+| 0 | A 0 0 0 No proper prefix/suffix can have one character.
+| 1 | B | 0 | "AB" — no prefix that matches a suffix |
+| 2 | A | 1 | "ABA" — prefix "A" matches suffix "A" |
+| 3 | B | 2 | "ABAB" — prefix "AB" matches suffix "AB" |
+| 4 | C | 0 | "ABABC" — no match |
+| 5 | A | 1 | "ABABCA" — prefix "A" matches suffix "A" |
+| 6 | B | 2 | "ABABCAB" — prefix "AB" matches suffix "AB" |
+| 7 | A | 3 | "ABABCABA" — prefix "ABA" matches suffix "ABA" |
+| 8 | B | 4 | "ABABCABAB" — prefix "ABAB" matches suffix "ABAB" |
+ 
+**LPS array:** `[0, 0, 1, 2, 0, 1, 2, 3, 4]`
+ 
+The LPS array is invoked at the search stage to prevent unnecessary comparisons - when the mismatch at position i in the pattern, the search will proceed at LPS[i-1] rather than searching at the beginning.
 
-LPS[8] = 4 indicates the longest prefix and suffix (ABAB) of the pattern AABBCABAB are both prefixes and suffixes of the pattern and thus the KMP does not need to rescan the letters that have already been recognized as matching the pattern.
-
-
-
-## (b): For the Rabin-Karp Algorithm: 
-- Explain how hash collisions are handled
-
-- State its average-case and worst-case time complexities
-
-### The way that Hash Collisions are dealt with
-
-RabinKarp operates by calculating a rolling hash of the pattern, and the hash of each window of the text of that length, and comparing hashes. A match of hash values indicates a possible pattern match. Two dissimilar strings may however have the same hash - this is a hash collision - and Rabin-Karp treats them as follows:
-
-**Step 1 — Hash comparison (filter step):**
-```
-If hash(text window) ≠ hash(pattern) → definitely NOT a match, skip
-If hash(text window) = hash(pattern) → POSSIBLE match, verify
-```
-
-**Step 2 -character by character verification: explicit verification:**
-Each time a hash match is observed, Rabin-Karp does a complete string compare between the pattern and the text window character by character. This guarantees correctness:
-
-- When the strings are equal, then this indicates a pattern found, hence a true positive.
-- when they are not equal, then, spurious hit / false positive due to collision, discard and proceed.
-
-**Collision reduction strategies:**
-- Choose a large prime number as the modulus in the hash function - decreases the likelihood of collision a lot.
-- Double hashing (two independent hash functions) - a collision in both functions is astronomically improbable.
-- The standard hash formula used is:
+![alt text](<image copy.png>)
 
 
-```
-hash = (d * hash + char) % q
-```
-
-Where `d` = number of characters in alphabet (typically 256), `q` = a large prime (e.g., 101 or 1000000007)
-
-The rolling hash updates in **O(1)** per window shift:
-```
-hash(next window) = (d * (hash(current) - text[i] * h) + text[i+m]) % q
-```
-Where `h = d^(m-1) % q` and m = pattern length.
+## Part Rabin-Karp: Hash Collisions and Complexity.: 
 
 
-### Time Complexities
-
-| Case | Complexity | When it occurs |
-|---|---|---|
-| **Best Case** | O(N + M) | No or very few hash collisions |
-| **Average Case** | O(N + M) | Expected with a good hash function |
-| **Worst Case** | O(NM) | Every window causes a spurious hash collision |
-
-**Explanation:**
-
-- **N** = length of text, **M** = length of pattern
-- Calculation of first hash = O(M)
-- Sliding the rolling hash across N - M + 1 windows = O(N)
-- **Average case O(N + M): The number of spurious hits of a good hash function is very small. Checks of windows are O(1) and only true matches result in O(M) checking - providing O(N + M).
-- **Worst case O(NM):** This is the worst case when each and every window has a hash collision which must be checked in O(M). e.g. finding pattern AAAA in text AAAA... where all windows hash to the same value. Each window provokes a complete O(M) comparison, with O(NM) overall.
-|human| Preprocessing Preprocessing | Search Worst Case
-|---|---|---|---|
-| KMP | O(M) | O(N) | O(N + M) always |
-| Rabin-Karp | O(M) | O(N) average | O(NM) worst case |
-
-KMP should ensure O(N + M) is always the case with the use of its LPS structure. The advantage of Rabin-Karp is in the ability to match multiple patterns simultaneously, i.e. in the case of k patterns, Rabin-Karp will run in O(N + kM) average time, not in KMP k times, and is thus highly useful in plagiarism detection, DNA sequencing and file fingerprinting.
-
+**Handling hash collisions:**
+ 
+RabinKarp compares the pattern with each window of the text by using a rolling hash. Due to the possibility of collisions (different strings hash to the same value), a match by the hash is considered merely a candidate match. Every time the hash of the current window matches the hash of the pattern, the algorithm will then do a complete character-by-character comparison to verify whether the match is a true one. This check can be used to verify that things are correct - spurious hits due to hash collisions do not cause false positives, but they introduce a little overhead.
+ 
+**Time complexities:**
+ 
+| Case | Complexity | Reason |
+|------|------------|--------|
+| O(N + M) | Rolling hash Checks every window in O(1); a small number of spurious hits
+| O(N × M) O(M)/window Checking To verify each window, it must check its hash, taking O(M) time.
+ 
+N is the length of the text, M is the length of the pattern.
+ 
+The worst case is not implemented in practice, and only occurs in cases where the hash function is poorly chosen or the input is adversarial. Having a decent polynomial rolling hash and a large prime modulus, the probability of a spurious hit is extremely small, maintaining the average-case performance at O(N + M).
+ 
+---
